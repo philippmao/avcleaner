@@ -148,8 +148,10 @@ bool MatchHandler::handleExpr(const clang::StringLiteral *pLiteral, clang::ASTCo
 
     std::string Replacement = Utils::translateStringToIdentifier(pLiteral->getBytes().str());
 
-    if(!insertVariableDeclaration(pLiteral, pContext, LiteralRange, Replacement, StringType))
+    if(!insertVariableDeclaration(pLiteral, pContext, LiteralRange, Replacement, StringType)){
+        llvm::outs() << "Failed to insert the variable declaration\n";
         return false ;
+    }
 
     if(!StringType.empty() && !NewType.empty())
         Replacement = "(" + NewType + ")" + Replacement;
@@ -338,6 +340,16 @@ MatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_typ
             auto *FirstChild = *Statement->child_begin();
             return {FirstChild->getBeginLoc(), FunDecl->getEndLoc()};
 
+        } else if (ParentNodeKind.find("CXXMethodDecl") != std::string::npos){
+            auto FunDecl = parent.get<clang::CXXMethodDecl>();
+            auto *Statement = FunDecl->getBody();
+            auto *FirstChild = *Statement->child_begin();
+            return {FirstChild->getBeginLoc(), FunDecl->getEndLoc()};
+        } else if (ParentNodeKind.find("CXXConstructorDecl") != std::string::npos){
+            auto FunDecl = parent.get<clang::CXXConstructorDecl>();
+            auto *Statement = FunDecl->getBody();
+            auto *FirstChild = *Statement->child_begin();
+            return {FirstChild->getBeginLoc(), FunDecl->getEndLoc()};
         } else if (ParentNodeKind.find("VarDecl") != std::string::npos) {
 
             if (IsGlobal) {
@@ -375,7 +387,14 @@ bool MatchHandler::isStringLiteralInGlobal(clang::ASTContext *const Context, con
 
     for (auto &CurrentParent : Parents) {
 
+        llvm::outs() << "Checking if String Literal is Global " << CurrentParent << "\n";
         if (CurrentParent == "FunctionDecl") {
+            return false;
+        }
+        if (CurrentParent == "CXXMethodDecl") {
+            return false;
+        }
+        if (CurrentParent == "CXXConstructorDecl") {
             return false;
         }
     }
