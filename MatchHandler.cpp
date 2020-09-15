@@ -110,6 +110,8 @@ void MatchHandler::run(const MatchResult &Result) {
         return;
     }
 
+    llvm::outs() << "String Literal detected " << Decl->getBytes() << "\n";
+
     auto StringType = findStringType(*Decl, Result.Context);
 
     climbParentsIgnoreCast(*Decl, clang::ast_type_traits::DynTypedNode(), Result.Context, 0, StringType);
@@ -180,7 +182,13 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
     auto MacroName = clang::Lexer::getImmediateMacroName(FunctionCall->getSourceRange().getBegin(), pContext->getSourceManager(), LangOpts);
 
     if(!MacroName.empty() && MacroName.compare(II->getName())){
-        llvm::outs() << "Macro detected, cannot guess the string type. Using TCHAR and prayers.\n";
+        llvm::outs() << "Macro detected " << II-> getName();
+        std::vector<std::string> exclude_macros { "_wassert" }; 
+        if(std::find(exclude_macros.begin(), exclude_macros.end(), II->getName()) != exclude_macros.end()){
+            // the macro is in the list of macros to be excluded
+            llvm::outs() << "Macro is excluded, ignoring the node\n";
+            return;
+        }
         StringType = "TCHAR ";
     }
 
