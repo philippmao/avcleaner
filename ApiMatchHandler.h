@@ -52,7 +52,8 @@ private:
     std::string _ApiName;
     std::string _TypeDef;
     std::string _Library;
-    std::vector<const clang::FunctionDecl*> TypedefAdded; // collection of locations where the TypeDef for the API was already added.
+    std::vector<std::string> MacroAdded; // collection of locations where the Load/Getproc for the Macro API was already added.
+    std::vector<std::string> TypedefAdded; // collection of locations where the Load/Getproc for the Macro API was already added.
 
     static clang::SourceRange findInjectionSpot(clang::ASTContext *const Context, clang::ast_type_traits::DynTypedNode Parent,
                                          const clang::CallExpr &Literal, uint64_t Iterations);
@@ -64,7 +65,7 @@ private:
     std::string getFunctionIdentifier(const clang::CallExpr *CallExpression);
 
     bool replaceIdentifier(const clang::CallExpr *CallExpression, const std::string &ApiName,
-                           const std::string &NewIdentifier);
+                           const std::string &NewIdentifier, clang::ASTContext *const pContext);
 
     bool handleCallExpr(const clang::CallExpr *CallExpression, clang::ASTContext *const pContext);
 };
@@ -94,4 +95,10 @@ static std::map<std::string, std::string> ApiToHide_samlib = {
         {"SamCloseHandle",                 "typedef NTSTATUS(__stdcall* _SamCloseHandle)(SAMPR_HANDLE SamHandle);"},
         {"SamFreeMemory",                  "typedef NTSTATUS(__stdcall* _SamFreeMemory)(PVOID Buffer);"}
 };
+
+static std::map<std::string, std::string> ApiToHide_Userlib = {
+        {"MessageBoxW",                  "typedef int(__stdcall* _MessageBoxW)(HWND    hWnd,LPCWSTR lpText,LPCWSTR lpCaption,UINT    uType);"},
+        {"MessageBoxA",                  "typedef int (*_MessageBoxA)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);"}
+};
+
 #endif //AVCLEANER_APIMATCHHANDLER_H

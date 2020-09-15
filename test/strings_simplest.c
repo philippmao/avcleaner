@@ -31,8 +31,6 @@ typedef struct _KUHL_M_C {
 int main(void)
 {
 
-    MessageBoxA(NULL, "Test", "Something", MB_OK);
-
     f_NtMapViewOfSection lNtMapViewOfSection;
     HMODULE ntdll;
 

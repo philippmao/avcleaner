@@ -7,6 +7,7 @@
 #include <regex>
 #include <random>
 #include <sstream>
+#include <vector>
 #include <clang/AST/CommentLexer.h>
 
 using namespace Utils;
@@ -102,3 +103,4 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
         Result << ",0};\n";
     return std::regex_replace(Result.str(), std::regex(",,"), ",");
 }
+

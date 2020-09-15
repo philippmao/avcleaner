@@ -18,4 +18,3 @@ clang-query "$1" -- -Xclang -ast-dump -D "_WIN64" -D "_UNICODE" -D "UNICODE" -D 
   "-fdebug-compilation-dir"\
   "-ferror-limit" "190" "-fmessage-length" "237" "-fno-use-cxa-atexit" "-fms-extensions" "-fms-compatibility" \
   "-fms-compatibility-version=19.15.26726" "-std=c++14" "-fdelayed-template-parsing" "-fobjc-runtime=gcc" "-fcxx-exceptions" "-fexceptions" "-fseh-exceptions" "-fdiagnostics-show-option" "-fcolor-diagnostics" "-x" "c++"
-
