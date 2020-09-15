@@ -1,12 +1,12 @@
 echo "Don't forget to update the path to your local winsdk"
-./CMakeBuild/avcleaner.bin "$1" --strings=true -- -D "_WIN64" -D "_UNICODE" -D "UNICODE" -D "_WINSOCK_DEPRECATED_NO_WARNINGS"\
-     "-I" "/usr/local/Cellar/llvm/9.0.1"#"/usr/lib/clang/8.0.1//include" \
-     "-I" "/usr/local/Cellar/llvm/9.0.1"#"/usr/lib/clang/8.0.1/" \
-     "-I" "/Users/vladimir/dev/avcleaner/Include/msvc-14.15.26726-include"\
-     "-I" "/Users/vladimir/dev/avcleaner/Include/10.0.17134.0/ucrt" \
-     "-I" "/Users/vladimir/dev/avcleaner/Include/10.0.17134.0/shared" \
-     "-I" "/Users/vladimir/dev/avcleaner/Include/10.0.17134.0/um" \
-     "-I" "/Users/vladimir/dev/avcleaner/Include/10.0.17134.0/winrt" \
+./CMakeBuild/avcleaner.bin "$1" --strings=true --api=true -- -D "_WIN64" -D "_UNICODE" -D "UNICODE" -D "_WINSOCK_DEPRECATED_NO_WARNINGS"\
+     "-I" "/usr/lib/clang/10.0.1/include" \
+     "-I" "include/10.0.19041.0/winrt" \
+     "-I" "include/10.0.19041.0/um" \
+     "-I" "include/10.0.19041.0/ucrt" \
+     "-I" "include/10.0.19041.0/shared" \
+     "-I" "include/10.0.19041.0/cppwinrt" \
+     "-I" "include/14.27.29110/include/" \
      "-w" \
      "-fdebug-compilation-dir"\
      "-fno-use-cxa-atexit" "-fms-extensions" "-fms-compatibility" \
