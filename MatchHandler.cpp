@@ -69,6 +69,13 @@ MatchHandler::findStringType(const StringLiteral &NodeString, clang::ASTContext 
 
         llvm::outs() << "getParent, Node kind ot^^o: " << parent.getNodeKind().asStringRef() << "\n";
     }
+    
+    //f** const remove it!
+    auto keyword = std::string("const");
+    auto pos = StringType.find(keyword);
+    if (pos != std::string::npos){
+        StringType.erase(pos, keyword.length());
+    }
 
     return StringType;
 }
@@ -205,6 +212,8 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
             auto Type = FunctionCall->getDirectCallee()->getParamDecl(i)->getType();
 
             // isConstQualified API returns incorrect result for LPCSTR or LPCWSTR, so the heuristic below is used.
+            // WTF is this  !?!?
+            
             if(DeclType.find("const") == std::string::npos && DeclType.find("LPC") == std::string::npos) {
 
                 auto keyword = std::string("const");
@@ -267,6 +276,7 @@ void MatchHandler::handleVarDeclExpr(const clang::StringLiteral *pLiteral, clang
 bool MatchHandler::insertVariableDeclaration(const clang::StringLiteral *pLiteral, clang::ASTContext *const pContext,
                                              clang::SourceRange range, const std::string& Replacement, std::string StringType) {
 
+    // should only be using the bytes for the encoding TODO
     std::string StringLiteralContent = pLiteral->getBytes().str();
 
     bool IsInGlobalContext = isStringLiteralInGlobal(pContext, *pLiteral);
@@ -308,9 +318,15 @@ bool MatchHandler::replaceStringLiteral(const clang::StringLiteral *pLiteral, cl
         // weird bug with TEXT Macro / other macros...there must be a proper way to do this.
         if (OrigText.find("TEXT") != std::string::npos) {
 
-            //ASTRewriter->RemoveText(LiteralRange);
-            //LiteralRange.setEnd(ASTRewriter->getSourceMgr().getFileLoc(pLiteral->getEndLoc().getLocWithOffset(-1)));
-            LiteralRange.setEnd(ASTRewriter->getSourceMgr().getFileLoc(pLiteral->getEndLoc()));
+            ASTRewriter->RemoveText(LiteralRange);
+            LiteralRange.setEnd(ASTRewriter->getSourceMgr().getFileLoc(pLiteral->getEndLoc().getLocWithOffset(-1)));
+            //LiteralRange.setEnd(ASTRewriter->getSourceMgr().getFileLoc(pLiteral->getEndLoc()));
+        }
+        if (OrigText.find("OLESTR") != std::string::npos) {
+
+            ASTRewriter->RemoveText(LiteralRange);
+            LiteralRange.setEnd(ASTRewriter->getSourceMgr().getFileLoc(pLiteral->getEndLoc().getLocWithOffset(-1)));
+            //LiteralRange.setEnd(ASTRewriter->getSourceMgr().getFileLoc(pLiteral->getEndLoc()));
         }
     }
 

@@ -7,6 +7,7 @@
 #include <regex>
 #include <random>
 #include <sstream>
+#include <vector>
 #include <clang/AST/CommentLexer.h>
 
 using namespace Utils;
@@ -52,6 +53,22 @@ void Utils::cleanParameter(std::string &Argument) {
 std::string
 Utils::generateVariableDeclaration(const std::string &StringIdentifier, const std::string &StringValue, std::string StringType) {
 
+    //generate Ciphertext
+    int key = 69; //TODO: randomly generate key
+    auto PlainText = std::string(StringValue);
+    cleanParameter(PlainText);
+    std::vector <int> CipherText;
+    for(std::string::iterator it = PlainText.begin(); it != PlainText.end(); it++) {
+        int nb = (int)*it & 0xff;
+        CipherText.push_back(key ^ nb);
+        // HACK: This is now only ASCII compatible (all characters > 256 are ignored), the StringType should be bytes TODO
+        if(StringType.find("wchar") != std::string::npos){
+            llvm::outs() << "Is this working ??";
+            it++;
+        }
+    }
+    CipherText.push_back(key ^ 0);
+
     std::stringstream Result;
 
     //Result << "\n#ifdef _UNICODE\n\twchar_t\n";
@@ -73,17 +90,21 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
         Result << "TCHAR " << StringIdentifier << "[] = {";
     }
 
-    auto CleanString = std::string(StringValue);
-    cleanParameter(CleanString);
+    //
+    for(std::vector<int>::size_type i = 0; i != CipherText.size(); i++) {
+        Result << "'\\x" << std::hex << CipherText[i] << "'";
+        if(i+1 != CipherText.size()){
+            Result << ",";
+        }
+    }
+    Result << "};\n";
+
+    //generate variable declaration with ciphertext string
+    /*
+    auto CleanString = CipherText.str();
     for (std::string::iterator it = CleanString.begin(); it != CleanString.end(); it++) {
 
-        if (*it == '\'') {
-            Result << "'\\" << *it << "'";
-        } else if (*it == '\\') {
-            Result << "'\\\\'";
-        } else if (*it == '\n') {
-            Result << "'\\n'";
-        } else if (*it != 0) {
+        if (*it != 0) {
             int nb = (int)*it & 0xff;
             Result << "'\\x" << std::hex << nb << "'";
         } else {
@@ -95,10 +116,32 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
             Result << ",";
         }
     }
-
     if (*Result.str().end() == ',')
         Result << "0};\n";
     else
         Result << ",0};\n";
+    */
+
+    
+    
+
+    //generate decryption routine
+    /*
+    char randomly_generated_keyname = keyvalue maybe a hash of the variable name
+    
+    for(char &x : variable name){
+        x = x ^ key;
+    }
+
+    */
+    std::string keyname = "k_" + randomString(12);
+    int key_value = (int)key & 0xff;
+    Result << StringType << " " << keyname << " = " << "'\\x" << std::hex << key_value << "'" << ";\n";
+    Result << "for(" << StringType <<" &x : " << StringIdentifier << "){\n";
+    Result << "x = x ^ " << keyname << ";\n";
+    Result << "}\n";
+
+    // Don't understand what this is for, error correction maybe ?
     return std::regex_replace(Result.str(), std::regex(",,"), ",");
 }
+
