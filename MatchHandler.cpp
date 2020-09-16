@@ -287,7 +287,7 @@ bool MatchHandler::insertVariableDeclaration(const clang::StringLiteral *pLitera
     bool InsertResult = ASTRewriter->InsertText(FreeSpace.getBegin(), StringVariableDeclaration);
 
     if (InsertResult) {
-        llvm::errs()<<" Could not finish to patch the string literal.\n";
+        llvm::errs()<<" Could not finish to patch the string literal, the location to be written to is a Macro.\n";
         Globs::PatchedSourceLocation.push_back(range);
     }
 
@@ -321,8 +321,10 @@ SourceRange
 MatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_type_traits::DynTypedNode Parent,
                                 const clang::StringLiteral &Literal, bool IsGlobal, uint64_t Iterations) {
 
-    if (Iterations > Globs::CLIMB_PARENTS_MAX_ITER)
+    if (Iterations > Globs::CLIMB_PARENTS_MAX_ITER){
         throw std::runtime_error("Reached max iterations when trying to find a function declaration");
+        llvm::outs() << "Reached max iterations when trying to find a function declaration\n";
+    }
 
     ASTContext::DynTypedNodeList parents = Context->getParents(Literal);;
 
@@ -333,6 +335,8 @@ MatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_typ
     for (const auto &parent : parents) {
 
         StringRef ParentNodeKind = parent.getNodeKind().asStringRef();
+
+        // There's a bug preventing the rewriting if the first child whose location is to be used, is a macro.
 
         if (ParentNodeKind.find("FunctionDecl") != std::string::npos) {
             auto FunDecl = parent.get<clang::FunctionDecl>();
