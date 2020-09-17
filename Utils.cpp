@@ -53,6 +53,10 @@ void Utils::cleanParameter(std::string &Argument) {
 std::string
 Utils::generateVariableDeclaration(const std::string &StringIdentifier, const std::string &StringValue, std::string StringType) {
 
+    if(StringType.empty()){
+        StringType = "TCHAR ";
+    }
+
     //generate Ciphertext
     int key = 69; //TODO: randomly generate key
     auto PlainText = std::string(StringValue);
@@ -124,7 +128,7 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
     
     
 
-    //generate decryption routine
+    //generate decryption routine TODO: generate code what works with c.
     /*
     char randomly_generated_keyname = keyvalue maybe a hash of the variable name
     
@@ -132,14 +136,26 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
         x = x ^ key;
     }
 
+    for (int i = 0; i < sizeof(StringIdentifier) / sizeof(Stringidentifier[0]; i++){
+        Stringidentifier[i] = Stringidentifier[i] ^ key;
+    }
+
     */
+
+    std::string keyname = "k_" + randomString(12);
+    Result << StringType << keyname << " = " << "'\\x" << std::hex << key << "'" << ";\n";
+    Result << "for(int i = 0; i < sizeof(" << StringIdentifier <<") / sizeof(" << StringIdentifier << "[0]); i++){\n";
+    Result << StringIdentifier << "[i] = " << StringIdentifier <<"[i] ^ " << keyname << ";\n";
+    Result << "}\n";
+
+    /* C++ compatible only :
     std::string keyname = "k_" + randomString(12);
     int key_value = (int)key & 0xff;
-    Result << StringType << " " << keyname << " = " << "'\\x" << std::hex << key_value << "'" << ";\n";
+    Result << StringType << keyname << " = " << "'\\x" << std::hex << key_value << "'" << ";\n";
     Result << "for(" << StringType <<" &x : " << StringIdentifier << "){\n";
     Result << "x = x ^ " << keyname << ";\n";
     Result << "}\n";
-
+    */
     // Don't understand what this is for, error correction maybe ?
     return std::regex_replace(Result.str(), std::regex(",,"), ",");
 }
