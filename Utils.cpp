@@ -63,7 +63,6 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
         CipherText.push_back(key ^ nb);
         // HACK: This is now only ASCII compatible (all characters > 256 are ignored), the StringType should be bytes TODO
         if(StringType.find("wchar") != std::string::npos){
-            llvm::outs() << "Is this working ??";
             it++;
         }
     }
