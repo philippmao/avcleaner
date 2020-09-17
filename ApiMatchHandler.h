@@ -97,7 +97,7 @@ static std::map<std::string, std::string> ApiToHide_samlib = {
 };
 
 static std::map<std::string, std::string> ApiToHide_Securlib = {
-        {"AcquireCredentialsHandleW",                  "typedef SECURITY_STATUS(__stdcall* _AcquireCredentialsHandleW)(PSECURITY_STRING pPrincipal,PSECURITY_STRING pPackage,unsigned long    fCredentialUse,void             *pvLogonId,void             *pAuthData,SEC_GET_KEY_FN   pGetKeyFn,void             *pvGetKeyArgument,PCredHandle      phCredential,PTimeStamp       ptsExpiry);"}
+        {"AcquireCredentialsHandleW",                  "typedef SECURITY_STATUS(__stdcall* _AcquireCredentialsHandleW)(LPWSTR pPrincipal,LPWSTR pPackage,unsigned long    fCredentialUse,void             *pvLogonId,void             *pAuthData,SEC_GET_KEY_FN   pGetKeyFn,void             *pvGetKeyArgument,PCredHandle      phCredential,PTimeStamp       ptsExpiry);"}
 };
 
 static std::map<std::string, std::string> ApiToHide_Userlib = {
