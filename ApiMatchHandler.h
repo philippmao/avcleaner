@@ -94,4 +94,9 @@ static std::map<std::string, std::string> ApiToHide_samlib = {
         {"SamCloseHandle",                 "typedef NTSTATUS(__stdcall* _SamCloseHandle)(SAMPR_HANDLE SamHandle);"},
         {"SamFreeMemory",                  "typedef NTSTATUS(__stdcall* _SamFreeMemory)(PVOID Buffer);"}
 };
+
+static std::map<std::string, std::string> ApiToHide_Securlib = {
+        {"AcquireCredentialsHandleW",                  "typedef SECURITY_STATUS(__stdcall* _AcquireCredentialsHandleW)(PSECURITY_STRING pPrincipal,PSECURITY_STRING pPackage,unsigned long    fCredentialUse,void             *pvLogonId,void             *pAuthData,SEC_GET_KEY_FN   pGetKeyFn,void             *pvGetKeyArgument,PCredHandle      phCredential,PTimeStamp       ptsExpiry);"}
+};
+
 #endif //AVCLEANER_APIMATCHHANDLER_H

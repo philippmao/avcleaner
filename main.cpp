@@ -111,6 +111,13 @@ namespace AVObfuscator {
                                                                                        "samlib.dll"));
                     consumers.push_back(*Cons);
                 }
+                
+                for(auto const& el: ApiToHide_Securlib){
+
+                    auto Cons = std::make_unique<ApiCallConsumer*>(new ApiCallConsumer(el.first, el.second,
+                                                                                       "Secur32.dll"));
+                    consumers.push_back(*Cons);
+                }
 
                 std::string MessageBoxATypeDef = "typedef int (*_MessageBoxA)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);";
                 auto Cons = std::make_unique<ApiCallConsumer*>(new ApiCallConsumer("MessageBoxA", MessageBoxATypeDef,
