@@ -6,6 +6,7 @@
 
 #include <string>
 #include <sstream>
+#include <algorithm>
 #include "clang/Lex/Preprocessor.h"
 #include "clang/Tooling/Inclusions/IncludeStyle.h"
 #include "Globals.h"
@@ -31,13 +32,52 @@ std::string ApiMatchHandler::getFunctionIdentifier(const CallExpr *CallExpressio
 }
 
 bool ApiMatchHandler::replaceIdentifier(const CallExpr *CallExpression, const std::string &ApiName,
-                                        const std::string &NewIdentifier) {
-    return this->ASTRewriter->ReplaceText(CallExpression->getBeginLoc(), ApiName.length(), NewIdentifier);
+                                        const std::string &NewIdentifier, clang::ASTContext *const pContext) {
+    llvm::outs() << "replacing the identifier " << ApiName <<  " newIdentifier " << NewIdentifier << "\n";
+
+    if(this->ASTRewriter->ReplaceText(CallExpression->getBeginLoc(), ApiName.length(), NewIdentifier)){
+        return true;
+    }else{
+        return false;
+    }
 }
 
 bool ApiMatchHandler::handleCallExpr(const CallExpr *CallExpression, clang::ASTContext *const pContext) {
 
+    clang::SourceLocation Begin = CallExpression->getBeginLoc();
+
     std::string Identifier = getFunctionIdentifier(CallExpression);
+
+    llvm::outs() << "lenght of the MacroAdded vector" << MacroAdded.size() << "\n";
+
+    //if the function is a macro like MessageBox with a A/W version, the replacement stays the same 
+    //and the source range of the current injection point is added to a vector
+    //the reason for this is because the function identifier cannot be overwritten in this case
+
+    if(!Begin.isFileID()){
+        llvm::outs() << "Begin of Callexpression is not rewritable -> check if this is a macro A/W missing\n";  
+        if (!(Identifier.back() == 'A' || Identifier.back() == 'W')){
+            llvm::outs() << "Unwritable function which is not A/W Exiting!\n";
+            return false;
+        }
+        //The Identifier stays the same and the replacement need the A/W removed
+        std::string Replacement = Identifier;
+        Replacement.pop_back();
+        //get the current context
+        clang::SourceRange ContextLocation = (findInjectionSpot(pContext, clang::ast_type_traits::DynTypedNode(),
+                                                           *CallExpression, 0));
+        //check if macro is already in a list
+        if(std::find(MacroAdded.begin(), MacroAdded.end(), &ContextLocation) != MacroAdded.end()) {
+            llvm::outs() << "Function definition already in this call!\n";
+            return true;
+        } else{
+            llvm::outs() << "Adding function definition for new funciton!\n";
+            MacroAdded.push_back(&ContextLocation);
+            return addGetProcAddress(CallExpression, pContext, Replacement, Identifier);
+        }
+    }
+
+    
     std::string Replacement = Utils::translateStringToIdentifier(Identifier);
 
     if (!addGetProcAddress(CallExpression, pContext, Replacement, Identifier)){
@@ -45,8 +85,7 @@ bool ApiMatchHandler::handleCallExpr(const CallExpr *CallExpression, clang::ASTC
         return false;
     }
         
-
-    return replaceIdentifier(CallExpression, Identifier, Replacement);
+    return replaceIdentifier(CallExpression, Identifier, Replacement, pContext);
 }
 
 void ApiMatchHandler::run(const MatchResult &Result) {
@@ -67,10 +106,12 @@ bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, 
     std::stringstream Result;
 
     // add function prototype if not already added
+    
     if(std::find(TypedefAdded.begin(), TypedefAdded.end(), pCallExpression->getDirectCallee()) == TypedefAdded.end()) {
 
         Result << "\t" << _TypeDef << "\n";
     }
+    
 
     // add LoadLibrary with obfuscated strings
     std::string LoadLibraryVariable = Utils::translateStringToIdentifier(_Library);
@@ -88,8 +129,6 @@ bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, 
 
     TypedefAdded.push_back(pCallExpression->getDirectCallee());
 
-    llvm::outs() << "Inserting getprocaddress" << Result.str() << "\n";
-
     // add everything at the beginning of the function.
     return !(ASTRewriter->InsertText(EnclosingFunctionRange.getBegin(), Result.str()));
 }
@@ -101,7 +140,7 @@ ApiMatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_
     if (Iterations > Globs::CLIMB_PARENTS_MAX_ITER)
         throw std::runtime_error("Reached max iterations when trying to find a function declaration");
 
-    ASTContext::DynTypedNodeList parents = Context->getParents(Literal);;
+    ASTContext::DynTypedNodeList parents = Context->getParents(Literal);
 
     if (Iterations > 0) {
         parents = Context->getParents(Parent);
@@ -110,6 +149,8 @@ ApiMatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_
     for (const auto &parent : parents) {
 
         StringRef ParentNodeKind = parent.getNodeKind().asStringRef();
+
+        llvm::outs() << "Parent Node" << ParentNodeKind << " \n";
 
         if (ParentNodeKind.find("FunctionDecl") != std::string::npos) {
             auto FunDecl = parent.get<clang::FunctionDecl>();

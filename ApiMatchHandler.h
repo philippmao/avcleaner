@@ -52,7 +52,8 @@ private:
     std::string _ApiName;
     std::string _TypeDef;
     std::string _Library;
-    std::vector<const clang::FunctionDecl*> TypedefAdded; // collection of locations where the TypeDef for the API was already added.
+    std::vector<const clang::SourceRange*> MacroAdded; // collection of locations where the Load/Getproc for the Macro API was already added.
+    std::vector<const clang::FunctionDecl*> TypedefAdded; // collection of locations where the Load/Getproc for the Macro API was already added.
 
     static clang::SourceRange findInjectionSpot(clang::ASTContext *const Context, clang::ast_type_traits::DynTypedNode Parent,
                                          const clang::CallExpr &Literal, uint64_t Iterations);
@@ -64,7 +65,7 @@ private:
     std::string getFunctionIdentifier(const clang::CallExpr *CallExpression);
 
     bool replaceIdentifier(const clang::CallExpr *CallExpression, const std::string &ApiName,
-                           const std::string &NewIdentifier);
+                           const std::string &NewIdentifier, clang::ASTContext *const pContext);
 
     bool handleCallExpr(const clang::CallExpr *CallExpression, clang::ASTContext *const pContext);
 };
@@ -97,6 +98,10 @@ static std::map<std::string, std::string> ApiToHide_samlib = {
 
 static std::map<std::string, std::string> ApiToHide_Securlib = {
         {"AcquireCredentialsHandleW",                  "typedef SECURITY_STATUS(__stdcall* _AcquireCredentialsHandleW)(PSECURITY_STRING pPrincipal,PSECURITY_STRING pPackage,unsigned long    fCredentialUse,void             *pvLogonId,void             *pAuthData,SEC_GET_KEY_FN   pGetKeyFn,void             *pvGetKeyArgument,PCredHandle      phCredential,PTimeStamp       ptsExpiry);"}
+};
+
+static std::map<std::string, std::string> ApiToHide_Userlib = {
+        {"MessageBoxW",                  "typedef int(__stdcall* _MessageBoxW)(HWND    hWnd,LPCWSTR lpText,LPCWSTR lpCaption,UINT    uType);"}
 };
 
 #endif //AVCLEANER_APIMATCHHANDLER_H

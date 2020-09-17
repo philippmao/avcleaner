@@ -62,6 +62,7 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
     auto PlainText = std::string(StringValue);
     cleanParameter(PlainText);
     std::vector <int> CipherText;
+    llvm::outs() << "StringType: " << StringType <<"\n";
     for(std::string::iterator it = PlainText.begin(); it != PlainText.end(); it++) {
         int nb = (int)*it & 0xff;
         CipherText.push_back(key ^ nb);
