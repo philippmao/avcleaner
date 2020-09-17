@@ -40,8 +40,11 @@ bool ApiMatchHandler::handleCallExpr(const CallExpr *CallExpression, clang::ASTC
     std::string Identifier = getFunctionIdentifier(CallExpression);
     std::string Replacement = Utils::translateStringToIdentifier(Identifier);
 
-    if (!addGetProcAddress(CallExpression, pContext, Replacement, Identifier))
+    if (!addGetProcAddress(CallExpression, pContext, Replacement, Identifier)){
+        llvm::outs() << "Failed to insert getProcAdress \n";
         return false;
+    }
+        
 
     return replaceIdentifier(CallExpression, Identifier, Replacement);
 }
@@ -85,6 +88,8 @@ bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, 
 
     TypedefAdded.push_back(pCallExpression->getDirectCallee());
 
+    llvm::outs() << "Inserting getprocaddress" << Result.str() << "\n";
+
     // add everything at the beginning of the function.
     return !(ASTRewriter->InsertText(EnclosingFunctionRange.getBegin(), Result.str()));
 }
@@ -111,8 +116,17 @@ ApiMatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_
             auto *Statement = FunDecl->getBody();
             auto *FirstChild = *Statement->child_begin();
             return {FirstChild->getBeginLoc(), FunDecl->getEndLoc()};
+        } else if (ParentNodeKind.find("CXXMethodDecl") != std::string::npos){
+            auto FunDecl = parent.get<clang::CXXMethodDecl>();
+            auto *Statement = FunDecl->getBody();
+            auto *FirstChild = *Statement->child_begin();
+            return {FirstChild->getBeginLoc(), FunDecl->getEndLoc()};
+        } else if (ParentNodeKind.find("CXXConstructorDecl") != std::string::npos){
+            auto FunDecl = parent.get<clang::CXXConstructorDecl>();
+            auto *Statement = FunDecl->getBody();
+            auto *FirstChild = *Statement->child_begin();
+            return {FirstChild->getBeginLoc(), FunDecl->getEndLoc()};
         }
-
         return findInjectionSpot(Context, parent, Literal, ++Iterations);
     }
 }
