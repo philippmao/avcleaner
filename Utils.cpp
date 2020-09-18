@@ -68,6 +68,7 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
             it++;
         }
         // HACK: string is inside a macro, now it is only compatible to compiling with UNICODE (tchar = wchar) -> compile final program only with unicode enabled
+        // If the obfuscated project is compiled wihout unicode comment this out and it should work (and the project has strings inside macros)
         if(StringType.empty()){
             it++;
         }

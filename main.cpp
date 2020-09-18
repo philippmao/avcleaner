@@ -119,10 +119,10 @@ namespace AVObfuscator {
                     consumers.push_back(*Cons);
                 }
 
-                for(auto const& el: ApiToHide_Userlib){
+                for(auto const& el: ApiToHide_Advapilib){
 
                     auto Cons = std::make_unique<ApiCallConsumer*>(new ApiCallConsumer(el.first, el.second,
-                                                                                       "User32.dll"));
+                                                                                       "Advapi32.dll"));
                     consumers.push_back(*Cons);
                 }
 
