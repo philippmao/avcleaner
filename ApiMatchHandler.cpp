@@ -66,13 +66,14 @@ bool ApiMatchHandler::handleCallExpr(const CallExpr *CallExpression, clang::ASTC
         //get the current context
         clang::SourceRange ContextLocation = (findInjectionSpot(pContext, clang::ast_type_traits::DynTypedNode(),
                                                            *CallExpression, 0));
+        std::string SourceRangeText = ContextLocation.printToString(ASTRewriter->getSourceMgr());
         //check if macro is already in a list
-        if(std::find(MacroAdded.begin(), MacroAdded.end(), &ContextLocation) != MacroAdded.end()) {
+        if(std::find(MacroAdded.begin(), MacroAdded.end(), SourceRangeText) != MacroAdded.end()) {
             llvm::outs() << "Function definition already in this call!\n";
             return true;
         } else{
             llvm::outs() << "Adding function definition for new funciton!\n";
-            MacroAdded.push_back(&ContextLocation);
+            MacroAdded.push_back(SourceRangeText);
             return addGetProcAddress(CallExpression, pContext, Replacement, Identifier);
         }
     }
@@ -100,18 +101,31 @@ void ApiMatchHandler::run(const MatchResult &Result) {
 bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, clang::ASTContext *const pContext,
                                         const std::string &NewIdentifier, std::string &ApiName) {
 
-    SourceRange EnclosingFunctionRange = findInjectionSpot(pContext, clang::ast_type_traits::DynTypedNode(),
+    std::stringstream Result;
+    
+    clang::SourceRange EnclosingFunctionRange = findInjectionSpot(pContext, clang::ast_type_traits::DynTypedNode(),
                                                            *pCallExpression, 0);
 
-    std::stringstream Result;
-
-    // add function prototype if not already added
+    std::string SourceRangeString = EnclosingFunctionRange.printToString(ASTRewriter->getSourceMgr());
     
-    if(std::find(TypedefAdded.begin(), TypedefAdded.end(), pCallExpression->getDirectCallee()) == TypedefAdded.end()) {
-
-        Result << "\t" << _TypeDef << "\n";
+    llvm::outs() << "enclosingfunctionrange" << SourceRangeString << "\n";
+    /*
+    for(auto const& value: TypedefAdded) {
+        llvm::outs() << "comparing to enclosingfunctionrange" << value << "\n";
+        if(value == SourceRangeString){
+            llvm::outs() << "Equal ! \n";
+        }
     }
+    TypedefAdded.push_back(SourceRangeString);*/
     
+    // add function prototype if not already added
+    if(std::find(TypedefAdded.begin(), TypedefAdded.end(), SourceRangeString) != TypedefAdded.end()) {
+        llvm::outs() << "Typedef already defined!\n";
+    } else{
+        llvm::outs() << "Typedef not yet defined in this Context!\n";
+        Result << "\t" << _TypeDef << "\n";
+        TypedefAdded.push_back(SourceRangeString);
+    }
 
     // add LoadLibrary with obfuscated strings
     std::string LoadLibraryVariable = Utils::translateStringToIdentifier(_Library);
@@ -127,8 +141,6 @@ bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, 
     Result << "\t" << ApiNameDecl << "\n";
     Result << "\t_"<< ApiName << " " << NewIdentifier << " = (_" << ApiName << ") GetProcAddress("
            << LoadLibraryHandleIdentifier << ", " << ApiNameIdentifier << ");\n";
-
-    TypedefAdded.push_back(pCallExpression->getDirectCallee());
 
     // add everything at the beginning of the function.
     return !(ASTRewriter->InsertText(EnclosingFunctionRange.getBegin(), Result.str()));
