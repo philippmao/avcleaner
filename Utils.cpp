@@ -53,10 +53,6 @@ void Utils::cleanParameter(std::string &Argument) {
 std::string
 Utils::generateVariableDeclaration(const std::string &StringIdentifier, const std::string &StringValue, std::string StringType) {
 
-    if(StringType.empty()){
-        StringType = "TCHAR ";
-    }
-
     //generate Ciphertext
     int key = 69; //TODO: randomly generate key
     auto PlainText = std::string(StringValue);
@@ -67,11 +63,22 @@ Utils::generateVariableDeclaration(const std::string &StringIdentifier, const st
         int nb = (int)*it & 0xff;
         CipherText.push_back(key ^ nb);
         // HACK: This is now only ASCII compatible (all characters > 256 are ignored), the StringType should be bytes TODO
+        // handle the case of stringtype being tchar but wide tchar strings
         if(StringType.find("wchar") != std::string::npos){
             it++;
         }
+        // HACK: string is inside a macro, now it is only compatible to compiling with UNICODE (tchar = wchar) -> compile final program only with unicode enabled
+        if(StringType.empty()){
+            it++;
+        }
     }
+
     CipherText.push_back(key ^ 0);
+
+    // handle the case of macro funcitno definitions; TODO: differentiate between macro guessing and actual tchar; low prio
+    if(StringType.empty()){
+        StringType = "TCHAR ";
+    }
 
     std::stringstream Result;
 

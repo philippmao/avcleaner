@@ -192,13 +192,13 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
 
     if(!MacroName.empty() && MacroName.compare(II->getName())){
         llvm::outs() << "Macro detected " << II-> getName();
+        //HACK TODO, actually handle these macros
         std::vector<std::string> exclude_macros { "_wassert" }; 
         if(std::find(exclude_macros.begin(), exclude_macros.end(), II->getName()) != exclude_macros.end()){
             // the macro is in the list of macros to be excluded
             llvm::outs() << "Macro is excluded, ignoring the node\n";
             return;
         }
-        StringType = "TCHAR ";
     }
 
     for(auto i = 0 ; i < FunctionCall->getDirectCallee()->getNumParams() ; i++) {

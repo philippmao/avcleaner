@@ -129,7 +129,7 @@ bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, 
 
     // add LoadLibrary with obfuscated strings
     std::string LoadLibraryVariable = Utils::translateStringToIdentifier(_Library);
-    std::string LoadLibraryString = Utils::generateVariableDeclaration(LoadLibraryVariable, _Library);
+    std::string LoadLibraryString = Utils::generateVariableDeclaration(LoadLibraryVariable, _Library, "TCHAR ");
     std::string LoadLibraryHandleIdentifier = Utils::translateStringToIdentifier("hHandle_"+_Library);
     Result << "\t" << LoadLibraryString << std::endl;
     Result << "\tHMODULE " << LoadLibraryHandleIdentifier << " = LoadLibrary(" << LoadLibraryVariable << ");\n";
