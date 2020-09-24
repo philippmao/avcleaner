@@ -63,6 +63,11 @@ private:
     static std::vector<std::string>
     getNodeParents(const clang::StringLiteral &NodeString, clang::ast_type_traits::DynTypedNode Node,
                    clang::ASTContext *Context, std::vector<std::string> &CurrentParents, uint64_t Iterations);
+    
+    static std::vector<clang::ast_type_traits::DynTypedNode>
+    getNodeParentsAsNodes(clang::ast_type_traits::DynTypedNode Node,
+                             clang::ASTContext *Context, std::vector<clang::ast_type_traits::DynTypedNode> &CurrentParents,
+                             uint64_t Iterations);
 
     /**
      * @brief decides what to do according to the location in the AST of the identified string literal.
@@ -122,6 +127,9 @@ private:
                     clang::ast_type_traits::DynTypedNode node, std::string StringType="", std::string NewType="");
 
     void handleVarDeclExpr(const clang::StringLiteral *pLiteral, clang::ASTContext *pContext,
+                           clang::ast_type_traits::DynTypedNode node, std::string StringType);
+
+    void handleCXXConstructExpr(const clang::StringLiteral *pLiteral, clang::ASTContext *pContext,
                            clang::ast_type_traits::DynTypedNode node, std::string StringType);
 
     std::string findStringType(const clang::StringLiteral &NodeString, clang::ASTContext *const pContext);

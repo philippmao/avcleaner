@@ -52,6 +52,33 @@ MatchHandler::getNodeParents(const StringLiteral &NodeString, clang::ast_type_tr
     return CurrentParents;
 }
 
+std::vector<clang::ast_type_traits::DynTypedNode>
+MatchHandler::getNodeParentsAsNodes(clang::ast_type_traits::DynTypedNode Node,
+                             clang::ASTContext *const Context, std::vector<clang::ast_type_traits::DynTypedNode> &CurrentParents,
+                             uint64_t Iterations) {
+
+    if (Iterations > Globs::CLIMB_PARENTS_MAX_ITER) {
+        return CurrentParents;
+    }
+
+    ASTContext::DynTypedNodeList parents = Context->getParents(Node);
+
+    for (const auto &parent : parents) {
+
+        StringRef ParentNodeKind = parent.getNodeKind().asStringRef();
+
+        if (ParentNodeKind.find("Cast") != std::string::npos) {
+
+            return getNodeParentsAsNodes(parent, Context, CurrentParents, ++Iterations);
+        }
+
+        CurrentParents.push_back(parent);
+        return getNodeParentsAsNodes(parent, Context, CurrentParents, ++Iterations);
+    }
+
+    return CurrentParents;
+}
+
 std::string
 MatchHandler::findStringType(const StringLiteral &NodeString, clang::ASTContext *const pContext) {
 
@@ -130,14 +157,17 @@ void MatchHandler::handleStringInContext(const clang::StringLiteral *pLiteral, c
 
     StringRef ParentNodeKind = node.getNodeKind().asStringRef();
 
+    llvm::outs() << "Context: " << ParentNodeKind << "\n";
+
     if (ParentNodeKind.compare("CallExpr") == 0) {
         handleCallExpr(pLiteral, pContext, node, StringType);
     } else if (ParentNodeKind.compare("InitListExpr") == 0) {
         handleInitListExpr(pLiteral, pContext, node, StringType);
-    }/* not yet ready
- *     else if(ParentNodeKind.compare("VarDecl") == 0) {
+    } else if(ParentNodeKind.compare("VarDecl") == 0) {
         handleVarDeclExpr(pLiteral, pContext, node, StringType);
-    }*/ else {
+    } else if(ParentNodeKind.compare("CXXConstructExpr") == 0){
+        handleCXXConstructExpr(pLiteral, pContext, node, StringType);
+    } else {
         llvm::outs() << "Unhandled context " << ParentNodeKind << " for string " << pLiteral->getBytes() << "\n";
     }
 }
@@ -248,28 +278,120 @@ void MatchHandler::handleVarDeclExpr(const clang::StringLiteral *pLiteral, clang
     auto TypeLoc =  node.get<clang::VarDecl>()->getTypeSourceInfo()->getTypeLoc();
     auto Type = TypeLoc.getType().getAsString();
     auto Loc = TypeLoc.getSourceRange();
-    std::string LHSReplacement;
-    if(Type.find(" []") != std::string::npos)
-        LHSReplacement = Type.replace(Type.find(" []"),3,"* ");
 
-    LHSReplacement.append(Identifier);
+    std::string NewType;
 
-    llvm::outs() << "Type of " << Identifier << " is " << Type << "\n";
-    std::string NewType = Type+" ";
-    if (Type.find("BYTE*") != std::string::npos) {
-        NewType = "const char ";
-    } else if(Type.find("wchar") != std::string::npos){
-        NewType = "const wchar_t ";
-    } else if(Type.find("WCHAR") != std::string::npos){
-        NewType = "const wchar_t ";
-    } else if(Type.find("char*") != std::string::npos){
-        NewType = "const char ";
+    if(Type.find("const") != std::string::npos){
+        llvm::outs() << "Type " << Type << "\n";
+        Type = Type.erase(Type.find("const "), 6);
     }
 
-    ASTRewriter->ReplaceText(Loc, LHSReplacement);
-    llvm::outs() << "Type of " << Identifier << " is " << StringType << "\n";
+    llvm::outs() << "Type after removing const" << Type <<"\n";
+
+    if(Type.find(" []") != std::string::npos){
+        // if the string was defined as a character array with [] and curly braces, the [] need to be replaced with 
+        // the equivalent * notation
+        NewType = Type.replace(Type.find(" []"),3," * ");
+        std::string LHSReplacement = NewType + Identifier.str(); 
+        ASTRewriter->ReplaceText(Loc, LHSReplacement);}
+    else{
+        NewType = Type+" ";
+    }
+
+    llvm::outs() << "Type of " << Identifier << " is " << NewType << "\n";
     
-    handleExpr(pLiteral, pContext, node, NewType, Type+" ");
+    handleExpr(pLiteral, pContext, node, NewType);
+}
+
+
+void MatchHandler::handleCXXConstructExpr(const clang::StringLiteral *pLiteral, clang::ASTContext *const pContext,
+                                      const clang::ast_type_traits::DynTypedNode node, std::string StringType) {
+
+    //need to retrieve the variable decleration
+    //if this is a variable declaration of the type std::string = "asdf"; The parent nodes of the string literal migth be as following
+    //CXXConstructExpr, CXXBindTemporaryExpr, MaterializeTemporaryExpr, CXXConstructExpr, ExprWithCleanups, VarDecl
+    //Currently we simply look for the Variable Declaration such that it shows up before either FunctionDecl, CXXMethodDecl or CXXConstructorDecl
+
+    isStringLiteralInGlobal(pContext, *pLiteral);
+
+    llvm::outs() << "After searching stringliteralglobal\n";
+
+    std::vector<clang::ast_type_traits::DynTypedNode> Parents;
+    getNodeParentsAsNodes(node, pContext, Parents, 0);
+
+    llvm::outs() << Parents.size() << "After getting the partents\n";
+
+    const clang::VarDecl *VarDecl;
+    clang::ast_type_traits::DynTypedNode newNode;
+
+    for (auto &CurrentParent : Parents) {
+
+        llvm::outs() << "LOOP START \n";
+
+        StringRef ParentNodeKind = CurrentParent.getNodeKind().asStringRef();
+
+        llvm::outs() << "Searching for VarDecl " << ParentNodeKind << "\n";
+
+        if (ParentNodeKind == "FunctionDecl") {
+            break;
+        }
+        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
+        if (ParentNodeKind == "CXXMethodDecl") {
+            break;
+        }
+        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
+        if (ParentNodeKind == "CXXConstructorDecl") {
+            break;
+        }
+        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
+        if (ParentNodeKind == "VarDecl") {
+            newNode = CurrentParent;
+            VarDecl = CurrentParent.get<clang::VarDecl>();
+        }
+        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
+    }
+
+    if(VarDecl == NULL){
+        llvm::outs() << "No Variable decleration for CXXConstructExpr, aborting!";
+        return;
+    }
+
+    auto Identifier = VarDecl->getIdentifier()->getName();
+    auto TypeLoc =  VarDecl->getTypeSourceInfo()->getTypeLoc();
+    auto Type = TypeLoc.getType().getAsString();
+    auto Loc = TypeLoc.getSourceRange();
+
+    std::string NewType;
+
+    if(Type.find("const") != std::string::npos){
+        llvm::outs() << "Type " << Type << "\n";
+        Type = Type.erase(Type.find("const "), 6);
+    }
+
+    llvm::outs() << "Type after removing const" << Type <<"\n";
+
+    if(Type.find("std::string") != std::string::npos){
+        llvm::outs() <<  Type <<"\n";
+        Type = Type.replace(Type.find("std::string"), sizeof("std::string")-1, "char");
+    }
+
+    if(Type.find("std::wstring") != std::string::npos){
+        Type = Type.replace(Type.find("std::wstring"), sizeof("std::wstring")-1, "wchar_t");
+    }
+
+    if(Type.find(" []") != std::string::npos){
+        // if the string was defined as a character array with [] and curly braces, the [] need to be replaced with 
+        // the equivalent * notation
+        NewType = Type.replace(Type.find(" []"),3," * ");
+        std::string LHSReplacement = NewType + Identifier.str(); 
+        ASTRewriter->ReplaceText(Loc, LHSReplacement);}
+    else{
+        NewType = Type+" ";
+    }
+
+    llvm::outs() << "Type of " << Identifier << " is " << NewType << "\n";
+    
+    handleExpr(pLiteral, pContext, newNode, NewType);
 }
 
 
