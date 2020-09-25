@@ -96,23 +96,9 @@ static std::map<std::string, std::string> ApiToHide_samlib = {
         {"SamFreeMemory",                  "typedef NTSTATUS(__stdcall* _SamFreeMemory)(PVOID Buffer);"}
 };
 
-static std::map<std::string, std::string> ApiToHide_Securlib = {
-        {"AcquireCredentialsHandleW",       "typedef SECURITY_STATUS(__stdcall* _AcquireCredentialsHandleW)(LPWSTR pPrincipal,LPWSTR pPackage,unsigned long fCredentialUse,void *pvLogonId,void *pAuthData,SEC_GET_KEY_FN pGetKeyFn,void *pvGetKeyArgument,PCredHandle phCredential,PTimeStamp ptsExpiry);"},
-        {"AcceptSecurityContext",           "typedef SECURITY_STATUS(__stdcall* _AcceptSecurityContext)(PCredHandle phCredential, PCtxtHandle phContext, PSecBufferDesc pInput, unsigned long fContextReq, unsigned long TargetDataRep, PCtxtHandle phNewContext, PSecBufferDesc pOutput, unsigned long *pfContextAttr, PTimeStamp ptsExpiry);"},
-        {"QuerySecurityContextToken",       "typedef SECURITY_STATUS(__stdcall* _QuerySecurityContextToken)(PCtxtHandle phContext, void **Token);"}
-};
-
-static std::map<std::string, std::string> ApiToHide_Advapilib = {
-        {"GetTokenInformation",             "typedef bool(__stdcall* _GetTokenInformation)(HANDLE TokenHandle, TOKEN_INFORMATION_CLASS TokenInformationClass, LPVOID TokenInformation, DWORD TokenInformationLength, PDWORD ReturnLength);"},
-        {"AdjustTokenPrivileges",           "typedef bool(__stdcall* _AdjustTokenPrivileges)(HANDLE TokenHandle, BOOL DisableAllPrivileges, PTOKEN_PRIVILEGES NewState, DWORD BufferLength, PTOKEN_PRIVILEGES PreviousState, PDWORD ReturnLength);"},
-        {"OpenProcessToken",                "typedef bool(__stdcall* _OpenProcessToken)(HANDLE ProcessHandle, DWORD DesiredAccess, PHANDLE TokenHandle);"},
-        {"DuplicateTokenEx",                "typedef bool(__stdcall* _DuplicateTokenEx)(HANDLE hExistingToken, DWORD dwDesiredAccess, LPSECURITY_ATTRIBUTES lpTokenAttributes, SECURITY_IMPERSONATION_LEVEL ImpersonationLevel, TOKEN_TYPE TokenType, PHANDLE phNewToken);"},
-        {"CreateProcessWithTokenW",         "typedef bool(__stdcall* _CreateProcessWithTokenW)(HANDLE hToken, DWORD dwLogonFlags, LPCWSTR lpApplicationName, LPWSTR lpCommandLine, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);"},
-        {"CreateProcessAsUserW",            "typedef bool(__stdcall* _CreateProcessAsUserW)(HANDLE hToken, LPCWSTR lpApplicationName, LPWSTR lpCommandLine, LPSECURITY_ATTRIBUTES lpProcessAttributes, LPSECURITY_ATTRIBUTES lpThreadAttributes, BOOL bInheritHandles, DWORD dwCreationFlags, LPVOID lpEnvironment, LPCWSTR lpCurrentDirectory, LPSTARTUPINFOW lpStartupInfo, LPPROCESS_INFORMATION lpProcessInformation);"}
-};
-
 static std::map<std::string, std::string> ApiToHide_Userlib = {
-        {"MessageBoxW",                  "typedef int(__stdcall* _MessageBoxW)(HWND    hWnd,LPCWSTR lpText,LPCWSTR lpCaption,UINT    uType);"}
+        {"MessageBoxW",                  "typedef int(__stdcall* _MessageBoxW)(HWND    hWnd,LPCWSTR lpText,LPCWSTR lpCaption,UINT    uType);"},
+        {"MessageBoxA",                  "typedef int (*_MessageBoxA)(HWND hWnd, LPCTSTR lpText, LPCTSTR lpCaption, UINT uType);"}
 };
 
 #endif //AVCLEANER_APIMATCHHANDLER_H
