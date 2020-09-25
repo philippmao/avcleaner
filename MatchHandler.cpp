@@ -220,6 +220,8 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
     LangOpts.CPlusPlus = true;
     auto MacroName = clang::Lexer::getImmediateMacroName(FunctionCall->getSourceRange().getBegin(), pContext->getSourceManager(), LangOpts);
 
+    /*
+    TOREMOVE
     if(!MacroName.empty() && MacroName.compare(II->getName())){
         llvm::outs() << "Macro detected " << II-> getName();
         //HACK TODO, actually handle these macros
@@ -230,6 +232,7 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
             return;
         }
     }
+    */
 
     for(auto i = 0 ; i < FunctionCall->getDirectCallee()->getNumParams() ; i++) {
 
@@ -242,7 +245,6 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
             auto Type = FunctionCall->getDirectCallee()->getParamDecl(i)->getType();
 
             // isConstQualified API returns incorrect result for LPCSTR or LPCWSTR, so the heuristic below is used.
-            // WTF is this  !?!?
             
             if(DeclType.find("const") == std::string::npos && DeclType.find("LPC") == std::string::npos) {
 
@@ -286,8 +288,6 @@ void MatchHandler::handleVarDeclExpr(const clang::StringLiteral *pLiteral, clang
         Type = Type.erase(Type.find("const "), 6);
     }
 
-    llvm::outs() << "Type after removing const" << Type <<"\n";
-
     if(Type.find(" []") != std::string::npos){
         // if the string was defined as a character array with [] and curly braces, the [] need to be replaced with 
         // the equivalent * notation
@@ -312,43 +312,29 @@ void MatchHandler::handleCXXConstructExpr(const clang::StringLiteral *pLiteral, 
     //CXXConstructExpr, CXXBindTemporaryExpr, MaterializeTemporaryExpr, CXXConstructExpr, ExprWithCleanups, VarDecl
     //Currently we simply look for the Variable Declaration such that it shows up before either FunctionDecl, CXXMethodDecl or CXXConstructorDecl
 
-    isStringLiteralInGlobal(pContext, *pLiteral);
-
-    llvm::outs() << "After searching stringliteralglobal\n";
-
     std::vector<clang::ast_type_traits::DynTypedNode> Parents;
     getNodeParentsAsNodes(node, pContext, Parents, 0);
-
-    llvm::outs() << Parents.size() << "After getting the partents\n";
 
     const clang::VarDecl *VarDecl;
     clang::ast_type_traits::DynTypedNode newNode;
 
     for (auto &CurrentParent : Parents) {
 
-        llvm::outs() << "LOOP START \n";
-
         StringRef ParentNodeKind = CurrentParent.getNodeKind().asStringRef();
-
-        llvm::outs() << "Searching for VarDecl " << ParentNodeKind << "\n";
 
         if (ParentNodeKind == "FunctionDecl") {
             break;
         }
-        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
         if (ParentNodeKind == "CXXMethodDecl") {
             break;
         }
-        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
         if (ParentNodeKind == "CXXConstructorDecl") {
             break;
         }
-        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
         if (ParentNodeKind == "VarDecl") {
             newNode = CurrentParent;
             VarDecl = CurrentParent.get<clang::VarDecl>();
         }
-        llvm::outs() << "WTFFFFF " << ParentNodeKind << "\n";
     }
 
     if(VarDecl == NULL){
@@ -368,8 +354,6 @@ void MatchHandler::handleCXXConstructExpr(const clang::StringLiteral *pLiteral, 
         Type = Type.erase(Type.find("const "), 6);
     }
 
-    llvm::outs() << "Type after removing const" << Type <<"\n";
-
     if(Type.find("std::string") != std::string::npos){
         llvm::outs() <<  Type <<"\n";
         Type = Type.replace(Type.find("std::string"), sizeof("std::string")-1, "char");
@@ -379,15 +363,7 @@ void MatchHandler::handleCXXConstructExpr(const clang::StringLiteral *pLiteral, 
         Type = Type.replace(Type.find("std::wstring"), sizeof("std::wstring")-1, "wchar_t");
     }
 
-    if(Type.find(" []") != std::string::npos){
-        // if the string was defined as a character array with [] and curly braces, the [] need to be replaced with 
-        // the equivalent * notation
-        NewType = Type.replace(Type.find(" []"),3," * ");
-        std::string LHSReplacement = NewType + Identifier.str(); 
-        ASTRewriter->ReplaceText(Loc, LHSReplacement);}
-    else{
-        NewType = Type+" ";
-    }
+    NewType = Type+" ";
 
     llvm::outs() << "Type of " << Identifier << " is " << NewType << "\n";
     
@@ -528,8 +504,6 @@ bool MatchHandler::isStringLiteralInGlobal(clang::ASTContext *const Context, con
     getNodeParents(Literal, clang::ast_type_traits::DynTypedNode(), Context, Parents, 0);
 
     for (auto &CurrentParent : Parents) {
-
-        llvm::outs() << "Checking if String Literal is Global " << CurrentParent << "\n";
         if (CurrentParent == "FunctionDecl") {
             return false;
         }
@@ -573,4 +547,3 @@ MatchHandler::shouldAbort(const clang::StringLiteral *pLiteral, clang::ASTContex
 
     return false;
 }
-

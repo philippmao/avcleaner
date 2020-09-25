@@ -48,8 +48,6 @@ bool ApiMatchHandler::handleCallExpr(const CallExpr *CallExpression, clang::ASTC
 
     std::string Identifier = getFunctionIdentifier(CallExpression);
 
-    llvm::outs() << "lenght of the MacroAdded vector" << MacroAdded.size() << "\n";
-
     //if the function is a macro like MessageBox with a A/W version, the replacement stays the same 
     //and the source range of the current injection point is added to a vector
     //the reason for this is because the function identifier cannot be overwritten in this case
@@ -69,16 +67,15 @@ bool ApiMatchHandler::handleCallExpr(const CallExpr *CallExpression, clang::ASTC
         std::string SourceRangeText = ContextLocation.printToString(ASTRewriter->getSourceMgr());
         //check if macro is already in a list
         if(std::find(MacroAdded.begin(), MacroAdded.end(), SourceRangeText) != MacroAdded.end()) {
-            llvm::outs() << "Function definition already in this call!\n";
+            llvm::outs() << "Function definition already in this context!\n";
             return true;
         } else{
-            llvm::outs() << "Adding function definition for new funciton!\n";
+            llvm::outs() << "Adding function definition for new function!\n";
             MacroAdded.push_back(SourceRangeText);
             return addGetProcAddress(CallExpression, pContext, Replacement, Identifier);
         }
     }
 
-    
     std::string Replacement = Utils::translateStringToIdentifier(Identifier);
 
     if (!addGetProcAddress(CallExpression, pContext, Replacement, Identifier)){
@@ -107,17 +104,7 @@ bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, 
                                                            *pCallExpression, 0);
 
     std::string SourceRangeString = EnclosingFunctionRange.printToString(ASTRewriter->getSourceMgr());
-    
-    llvm::outs() << "enclosingfunctionrange" << SourceRangeString << "\n";
-    /*
-    for(auto const& value: TypedefAdded) {
-        llvm::outs() << "comparing to enclosingfunctionrange" << value << "\n";
-        if(value == SourceRangeString){
-            llvm::outs() << "Equal ! \n";
-        }
-    }
-    TypedefAdded.push_back(SourceRangeString);*/
-    
+        
     // add function prototype if not already added
     if(std::find(TypedefAdded.begin(), TypedefAdded.end(), SourceRangeString) != TypedefAdded.end()) {
         llvm::outs() << "Typedef already defined!\n";

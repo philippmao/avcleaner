@@ -64,6 +64,14 @@ private:
     getNodeParents(const clang::StringLiteral &NodeString, clang::ast_type_traits::DynTypedNode Node,
                    clang::ASTContext *Context, std::vector<std::string> &CurrentParents, uint64_t Iterations);
     
+    /**
+     * gets a list of all the parent nodes 
+     * @param Node holds the current node
+     * @param Context ASTContext of the initail node.
+     * @param CurrentParents Accumulator of the encountered parent nodes.
+     * @param Iterations Number of iterations, used to prevent stack overflow.
+     * @return a vector of nodes (DynTypedNode)
+     */
     static std::vector<clang::ast_type_traits::DynTypedNode>
     getNodeParentsAsNodes(clang::ast_type_traits::DynTypedNode Node,
                              clang::ASTContext *Context, std::vector<clang::ast_type_traits::DynTypedNode> &CurrentParents,
