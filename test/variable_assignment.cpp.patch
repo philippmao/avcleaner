@@ -48,4 +48,4 @@ const char* test = hid_Hank_s_Rx1FbVOpGeks;
     std::wcout << test5;
 
     return 0;
-}
+} 

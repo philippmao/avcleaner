@@ -5,17 +5,16 @@ clang-query "$1" -- -Xclang -ast-dump -D "_WIN64" -D "_UNICODE" -D "UNICODE" -D 
   "-mrelocation-model" "pic" "-pic-level" "2" "-mthread-model" "posix" "-fmath-errno" \
   "-masm-verbose" "-mconstructor-aliases" "-munwind-tables" "-target-cpu" "x86-64" \
   "-dwarf-column-info" "-debugger-tuning=gdb" "-momit-leaf-frame-pointer" "-v"\
-  "-resource-dir" "/usr/lib/clang/10.0.1/" \
-  "-I" "/usr/lib/clang/10.0.1/include" \
-     "-I" "include/10.0.19041.0/winrt" \
-     "-I" "include/10.0.19041.0/um" \
-     "-I" "include/10.0.19041.0/ucrt" \
-     "-I" "include/10.0.19041.0/shared" \
-     "-I" "include/10.0.19041.0/cppwinrt" \
-     "-I" "include/14.27.29110/include/" \
+  "-resource-dir" "$CLANG_PATH" \
+  "-I" "$CLANG_PATH/include" \
+  "-I" "$CLANG_PATH" \
+  "-I" "$WIN_INCLUDE/Include/msvc-14.15.26726-include"\
+  "-I" "$WIN_INCLUDE/Include/10.0.17134.0/ucrt" \
+  "-I" "$WIN_INCLUDE/Include/10.0.17134.0/shared" \
+  "-I" "$WIN_INCLUDE/Include/10.0.17134.0/um" \
+  "-I" "$WIN_INCLUDE/Include/10.0.17134.0/winrt" \
   "-fdeprecated-macro" \
   "-w" \
   "-fdebug-compilation-dir"\
   "-ferror-limit" "190" "-fmessage-length" "237" "-fno-use-cxa-atexit" "-fms-extensions" "-fms-compatibility" \
   "-fms-compatibility-version=19.15.26726" "-std=c++14" "-fdelayed-template-parsing" "-fobjc-runtime=gcc" "-fcxx-exceptions" "-fexceptions" "-fseh-exceptions" "-fdiagnostics-show-option" "-fcolor-diagnostics" "-x" "c++"
-
