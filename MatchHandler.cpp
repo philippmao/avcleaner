@@ -97,7 +97,7 @@ MatchHandler::findStringType(const StringLiteral &NodeString, clang::ASTContext 
         llvm::outs() << "getParent, Node kind ot^^o: " << parent.getNodeKind().asStringRef() << "\n";
     }
     
-    //f** const remove it!
+    //no need for const
     auto keyword = std::string("const");
     auto pos = StringType.find(keyword);
     if (pos != std::string::npos){
@@ -219,20 +219,6 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
     clang::LangOptions LangOpts;
     LangOpts.CPlusPlus = true;
     auto MacroName = clang::Lexer::getImmediateMacroName(FunctionCall->getSourceRange().getBegin(), pContext->getSourceManager(), LangOpts);
-
-    /*
-    TOREMOVE
-    if(!MacroName.empty() && MacroName.compare(II->getName())){
-        llvm::outs() << "Macro detected " << II-> getName();
-        //HACK TODO, actually handle these macros
-        std::vector<std::string> exclude_macros { "_wassert" }; 
-        if(std::find(exclude_macros.begin(), exclude_macros.end(), II->getName()) != exclude_macros.end()){
-            // the macro is in the list of macros to be excluded
-            llvm::outs() << "Macro is excluded, ignoring the node\n";
-            return;
-        }
-    }
-    */
 
     for(auto i = 0 ; i < FunctionCall->getDirectCallee()->getNumParams() ; i++) {
 
