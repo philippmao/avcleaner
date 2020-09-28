@@ -2,12 +2,11 @@
 
 
 int test3(){
-    int test;
-    /*MessageBox(NULL, L"Test", L"Something", MB_OK);
+    // Macro is the first node, function replacment breaks
+    MessageBox(NULL, L"Test", L"Something", MB_OK);
     MessageBoxW(NULL, L"Test", L"Something", MB_OK);
     MessageBox(NULL, L"Test", L"Something", MB_OK);
     MessageBoxA(NULL, "Test", "Something", MB_OK);
-    */
     return 0;
 }
 
