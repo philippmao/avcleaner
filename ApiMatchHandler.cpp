@@ -33,7 +33,7 @@ std::string ApiMatchHandler::getFunctionIdentifier(const CallExpr *CallExpressio
 
 bool ApiMatchHandler::replaceIdentifier(const CallExpr *CallExpression, const std::string &ApiName,
                                         const std::string &NewIdentifier, clang::ASTContext *const pContext) {
-    llvm::outs() << "replacing the identifier " << ApiName <<  " newIdentifier " << NewIdentifier << "\n";
+    llvm::outs() << "replacing the identifier " << ApiName <<  " with newIdentifier " << NewIdentifier << "\n";
 
     if(this->ASTRewriter->ReplaceText(CallExpression->getBeginLoc(), ApiName.length(), NewIdentifier)){
         return true;
@@ -53,7 +53,7 @@ bool ApiMatchHandler::handleCallExpr(const CallExpr *CallExpression, clang::ASTC
     //the reason for this is because the function identifier cannot be overwritten in this case
 
     if(!Begin.isFileID()){
-        llvm::outs() << "Begin of Callexpression is not rewritable -> check if this is a macro A/W missing\n";  
+        llvm::outs() << "Begin of Callexpression is not rewritable -> First node might be a macro\n";  
         if (!(Identifier.back() == 'A' || Identifier.back() == 'W')){
             llvm::outs() << "Unwritable function which is not A/W Exiting!\n";
             return false;
@@ -109,7 +109,6 @@ bool ApiMatchHandler::addGetProcAddress(const clang::CallExpr *pCallExpression, 
     if(std::find(TypedefAdded.begin(), TypedefAdded.end(), SourceRangeString) != TypedefAdded.end()) {
         llvm::outs() << "Typedef already defined!\n";
     } else{
-        llvm::outs() << "Typedef not yet defined in this Context!\n";
         Result << "\t" << _TypeDef << "\n";
         TypedefAdded.push_back(SourceRangeString);
     }
@@ -149,8 +148,6 @@ ApiMatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_
     for (const auto &parent : parents) {
 
         StringRef ParentNodeKind = parent.getNodeKind().asStringRef();
-
-        llvm::outs() << "Parent Node" << ParentNodeKind << " \n";
 
         if (ParentNodeKind.find("FunctionDecl") != std::string::npos) {
             auto FunDecl = parent.get<clang::FunctionDecl>();

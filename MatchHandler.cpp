@@ -91,10 +91,7 @@ MatchHandler::findStringType(const StringLiteral &NodeString, clang::ASTContext 
         if (ParentNodeKind.find("Cast") != std::string::npos) {
 
             StringType = parent.get<clang::ImplicitCastExpr>()->getType().getAsString();
-            llvm::outs() << "StringType is " << StringType  << "\n";
         }
-
-        llvm::outs() << "getParent, Node kind ot^^o: " << parent.getNodeKind().asStringRef() << "\n";
     }
     
     //no need for const
@@ -144,8 +141,6 @@ void MatchHandler::run(const MatchResult &Result) {
         return;
     }
 
-    llvm::outs() << "String Literal detected " << Decl->getBytes() << "\n";
-
     auto StringType = findStringType(*Decl, Result.Context);
 
     climbParentsIgnoreCast(*Decl, clang::ast_type_traits::DynTypedNode(), Result.Context, 0, StringType);
@@ -156,8 +151,6 @@ void MatchHandler::handleStringInContext(const clang::StringLiteral *pLiteral, c
                                          const clang::ast_type_traits::DynTypedNode node, std::string StringType) {
 
     StringRef ParentNodeKind = node.getNodeKind().asStringRef();
-
-    llvm::outs() << "Context: " << ParentNodeKind << "\n";
 
     if (ParentNodeKind.compare("CallExpr") == 0) {
         handleCallExpr(pLiteral, pContext, node, StringType);
@@ -221,7 +214,7 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
     auto MacroName = clang::Lexer::getImmediateMacroName(FunctionCall->getSourceRange().getBegin(), pContext->getSourceManager(), LangOpts);
 
     for(auto i = 0 ; i < FunctionCall->getDirectCallee()->getNumParams() ; i++) {
-
+        
         auto ArgStart = pContext->getSourceManager().getSpellingColumnNumber(FunctionCall->getArg(i)->getBeginLoc());
         auto StringStart = pContext->getSourceManager().getSpellingColumnNumber(pLiteral->getBeginLoc());
 
@@ -243,7 +236,6 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
             break;
         }
     };
-
     if (isBlacklistedFunction(FunctionCall)) {
         return; // TODO: exclude printf-like functions when the replacement is not constant anymore.
     }
@@ -254,7 +246,6 @@ void MatchHandler::handleCallExpr(const clang::StringLiteral *pLiteral, clang::A
 // TODO : search includes for "common.h" or add it
 void MatchHandler::handleInitListExpr(const clang::StringLiteral *pLiteral, clang::ASTContext *const pContext,
                                       const clang::ast_type_traits::DynTypedNode node, std::string StringType) {
-
 
     handleExpr(pLiteral, pContext, node, StringType);
 }
@@ -270,7 +261,6 @@ void MatchHandler::handleVarDeclExpr(const clang::StringLiteral *pLiteral, clang
     std::string NewType;
 
     if(Type.find("const") != std::string::npos){
-        llvm::outs() << "Type " << Type << "\n";
         Type = Type.erase(Type.find("const "), 6);
     }
 
@@ -284,8 +274,7 @@ void MatchHandler::handleVarDeclExpr(const clang::StringLiteral *pLiteral, clang
         NewType = Type+" ";
     }
 
-    llvm::outs() << "Type of " << Identifier << " is " << NewType << "\n";
-    
+    llvm::outs() << "Type of " << Identifier << " is " << NewType << "\n"; 
     handleExpr(pLiteral, pContext, node, NewType);
 }
 
@@ -305,9 +294,7 @@ void MatchHandler::handleCXXConstructExpr(const clang::StringLiteral *pLiteral, 
     clang::ast_type_traits::DynTypedNode newNode;
 
     for (auto &CurrentParent : Parents) {
-
         StringRef ParentNodeKind = CurrentParent.getNodeKind().asStringRef();
-
         if (ParentNodeKind == "FunctionDecl") {
             break;
         }
@@ -336,23 +323,17 @@ void MatchHandler::handleCXXConstructExpr(const clang::StringLiteral *pLiteral, 
     std::string NewType;
 
     if(Type.find("const") != std::string::npos){
-        llvm::outs() << "Type " << Type << "\n";
         Type = Type.erase(Type.find("const "), 6);
     }
-
     if(Type.find("std::string") != std::string::npos){
-        llvm::outs() <<  Type <<"\n";
         Type = Type.replace(Type.find("std::string"), sizeof("std::string")-1, "char");
     }
-
     if(Type.find("std::wstring") != std::string::npos){
         Type = Type.replace(Type.find("std::wstring"), sizeof("std::wstring")-1, "wchar_t");
     }
 
     NewType = Type+" ";
-
-    llvm::outs() << "Type of " << Identifier << " is " << NewType << "\n";
-    
+    llvm::outs() << "Type of " << Identifier << " is " << NewType << "\n"; 
     handleExpr(pLiteral, pContext, newNode, NewType);
 }
 
@@ -443,7 +424,6 @@ MatchHandler::findInjectionSpot(clang::ASTContext *const Context, clang::ast_typ
             auto *Statement = FunDecl->getBody();
             auto *FirstChild = *Statement->child_begin();
             return {FirstChild->getBeginLoc(), FunDecl->getEndLoc()};
-
         } else if (ParentNodeKind.find("CXXMethodDecl") != std::string::npos){
             auto FunDecl = parent.get<clang::CXXMethodDecl>();
             auto *Statement = FunDecl->getBody();
